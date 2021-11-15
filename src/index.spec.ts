@@ -66,3 +66,24 @@ it('logs when method returns a promise', async () => {
     },
   );
 });
+
+it('logs when method rejects', async () => {
+  @Trace({ logger })
+  class UserRepository {
+    async create(name: string) {
+      throw new Error('Not implemented');
+    }
+  }
+
+  await expect(new UserRepository().create('Aymeric')).rejects.toThrow(
+    new Error('Not implemented'),
+  );
+
+  expect(logger.error).toHaveBeenNthCalledWith(
+    1,
+    '‹ await UserRepository.create',
+    {
+      error: new Error('Not implemented'),
+    },
+  );
+});

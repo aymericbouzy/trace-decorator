@@ -18,13 +18,22 @@ export default function Trace({ logger = console }: { logger?: Logger }) {
           const result = method.call(this, ...arguments);
 
           if (isThenable(result)) {
-            return result.then((awaitedResult) => {
-              logger.info(`‹ await ${classConstructor.name}.${methodName}`, {
-                output: awaitedResult,
-              });
+            return result.then(
+              (awaitedResult) => {
+                logger.info(`‹ await ${classConstructor.name}.${methodName}`, {
+                  output: awaitedResult,
+                });
 
-              return awaitedResult;
-            });
+                return awaitedResult;
+              },
+              (error) => {
+                logger.error(`‹ await ${classConstructor.name}.${methodName}`, {
+                  error,
+                });
+
+                throw error;
+              },
+            );
           }
 
           logger.info(`‹ ${classConstructor.name}.${methodName}`, {
