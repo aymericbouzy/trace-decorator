@@ -20,10 +20,10 @@ it('calls logger with input and output', () => {
 
   new UserRepository().create('Aymeric');
 
-  expect(logger.info).toHaveBeenNthCalledWith(1, '› UserRepository.create', {
+  expect(logger.info).toHaveBeenNthCalledWith(1, '› userRepository.create', {
     input: ['Aymeric'],
   });
-  expect(logger.info).toHaveBeenNthCalledWith(2, '‹ UserRepository.create', {
+  expect(logger.info).toHaveBeenNthCalledWith(2, '‹ userRepository.create', {
     output: { id: 1, name: 'Aymeric' },
     executionMs: expect.any(Number),
   });
@@ -41,7 +41,7 @@ it('keeps "this" untouched', () => {
 
   new UserRepository().create('Aymeric');
 
-  expect(logger.info).toHaveBeenNthCalledWith(2, '‹ UserRepository.create', {
+  expect(logger.info).toHaveBeenNthCalledWith(2, '‹ userRepository.create', {
     output: { id: 1, name: 'Aymeric' },
     executionMs: expect.any(Number),
   });
@@ -59,10 +59,10 @@ it('logs when method throws', () => {
     new Error('Not implemented'),
   );
 
-  expect(logger.info).toHaveBeenNthCalledWith(1, '› UserRepository.create', {
+  expect(logger.info).toHaveBeenNthCalledWith(1, '› userRepository.create', {
     input: ['Aymeric'],
   });
-  expect(logger.error).toHaveBeenNthCalledWith(1, '‹ UserRepository.create', {
+  expect(logger.error).toHaveBeenNthCalledWith(1, '‹ userRepository.create', {
     error: new Error('Not implemented'),
     executionMs: expect.any(Number),
   });
@@ -80,7 +80,7 @@ it('logs when method returns a promise', async () => {
 
   expect(logger.info).toHaveBeenNthCalledWith(
     2,
-    '‹ await UserRepository.create',
+    '‹ await userRepository.create',
     {
       output: { id: 1, name: 'Aymeric' },
       executionMs: expect.any(Number),
@@ -102,10 +102,29 @@ it('logs when method rejects', async () => {
 
   expect(logger.error).toHaveBeenNthCalledWith(
     1,
-    '‹ await UserRepository.create',
+    '‹ await userRepository.create',
     {
       error: new Error('Not implemented'),
       executionMs: expect.any(Number),
     },
   );
+});
+
+it('logs input output on static methods', async () => {
+  @Trace({ logger })
+  class UserRepository {
+    static create(name: string) {
+      return { id: 1, name };
+    }
+  }
+
+  UserRepository.create('Aymeric');
+
+  expect(logger.info).toHaveBeenNthCalledWith(1, '› UserRepository.create', {
+    input: ['Aymeric'],
+  });
+  expect(logger.info).toHaveBeenNthCalledWith(2, '‹ UserRepository.create', {
+    output: { id: 1, name: 'Aymeric' },
+    executionMs: expect.any(Number),
+  });
 });

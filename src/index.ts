@@ -18,6 +18,21 @@ export default function Trace({ logger = console }: { logger?: Logger }) {
       );
     }
 
+    const staticMethodNames = Object.getOwnPropertyNames(classConstructor);
+
+    for (const staticMethodName of staticMethodNames) {
+      // @ts-expect-error
+      const staticMethod = classConstructor[staticMethodName];
+      if (typeof staticMethod === 'function') {
+        // @ts-expect-error
+        classConstructor[staticMethodName] = decorate(
+          staticMethod,
+          `${classConstructor.name}.${staticMethodName}`,
+          logger,
+        );
+      }
+    }
+
     return classConstructor;
   };
 }
