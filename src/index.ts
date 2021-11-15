@@ -9,50 +9,13 @@ export default function Trace({ logger = console }: { logger?: Logger }) {
     const methodNames = Object.getOwnPropertyNames(classConstructor.prototype);
 
     for (const methodName of methodNames) {
-      const method: Function = classConstructor.prototype[methodName];
+      const method = classConstructor.prototype[methodName];
 
-      classConstructor.prototype[methodName] = function () {
-        const execution = new Execution(
-          `${classConstructor.name}.${methodName}`,
-          logger,
-        );
-        execution.input([...arguments]);
-
-        try {
-          const result = method.call(this, ...arguments);
-
-          if (isThenable(result)) {
-            return result.then(
-              (awaitedResult) => {
-                execution.output(
-                  'info',
-                  awaitedResult,
-                  (methodName) => `await ${methodName}`,
-                );
-
-                return awaitedResult;
-              },
-              (error) => {
-                execution.output(
-                  'error',
-                  error,
-                  (methodName) => `await ${methodName}`,
-                );
-
-                throw error;
-              },
-            );
-          }
-
-          execution.output('info', result);
-
-          return result;
-        } catch (error) {
-          execution.output('error', error);
-
-          throw error;
-        }
-      };
+      classConstructor.prototype[methodName] = decorate(
+        method,
+        `${instanceName(classConstructor.name)}.${methodName}`,
+        logger,
+      );
     }
 
     return classConstructor;
@@ -86,4 +49,56 @@ class Execution {
       executionMs: new Date().valueOf() - this.start.valueOf(),
     });
   }
+}
+
+function instanceName(className: string) {
+  return `${className[0].toLowerCase()}${className.slice(1)}`;
+}
+
+function decorate<F extends Function>(
+  method: F,
+  name: string,
+  logger: Logger,
+): F {
+  // @ts-expect-error
+  return function () {
+    const execution = new Execution(name, logger);
+    execution.input([...arguments]);
+
+    try {
+      // @ts-expect-error
+      const result = method.call(this, ...arguments);
+
+      if (isThenable(result)) {
+        return result.then(
+          (awaitedResult) => {
+            execution.output(
+              'info',
+              awaitedResult,
+              (methodName) => `await ${methodName}`,
+            );
+
+            return awaitedResult;
+          },
+          (error) => {
+            execution.output(
+              'error',
+              error,
+              (methodName) => `await ${methodName}`,
+            );
+
+            throw error;
+          },
+        );
+      }
+
+      execution.output('info', result);
+
+      return result;
+    } catch (error) {
+      execution.output('error', error);
+
+      throw error;
+    }
+  };
 }
