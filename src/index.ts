@@ -16,6 +16,17 @@ export default function Trace({ logger = console }: { logger?: Logger }) {
         });
         try {
           const result = method.call(this, ...arguments);
+
+          if (isThenable(result)) {
+            return result.then((awaitedResult) => {
+              logger.info(`‹ await ${classConstructor.name}.${methodName}`, {
+                output: awaitedResult,
+              });
+
+              return awaitedResult;
+            });
+          }
+
           logger.info(`‹ ${classConstructor.name}.${methodName}`, {
             output: result,
           });
@@ -33,4 +44,12 @@ export default function Trace({ logger = console }: { logger?: Logger }) {
 
     return classConstructor;
   };
+}
+
+function isThenable(variable: unknown): variable is PromiseLike<unknown> {
+  return (
+    variable instanceof Object &&
+    // @ts-expect-error
+    typeof variable.then === 'function'
+  );
 }

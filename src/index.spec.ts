@@ -10,7 +10,7 @@ beforeEach(async () => {
   };
 });
 
-it('calls logger with input and output', async () => {
+it('calls logger with input and output', () => {
   @Trace({ logger })
   class UserRepository {
     create(name: string) {
@@ -28,7 +28,7 @@ it('calls logger with input and output', async () => {
   });
 });
 
-it('logs when method throws', async () => {
+it('logs when method throws', () => {
   @Trace({ logger })
   class UserRepository {
     create(name: string) {
@@ -46,4 +46,23 @@ it('logs when method throws', async () => {
   expect(logger.error).toHaveBeenNthCalledWith(1, '‹ UserRepository.create', {
     error: new Error('Not implemented'),
   });
+});
+
+it('logs when method returns a promise', async () => {
+  @Trace({ logger })
+  class UserRepository {
+    async create(name: string) {
+      return { id: 1, name };
+    }
+  }
+
+  await new UserRepository().create('Aymeric');
+
+  expect(logger.info).toHaveBeenNthCalledWith(
+    2,
+    '‹ await UserRepository.create',
+    {
+      output: { id: 1, name: 'Aymeric' },
+    },
+  );
 });
