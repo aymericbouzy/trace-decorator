@@ -1,11 +1,11 @@
 import { Logger } from './types';
 
-interface Constructor<T> {
-  new (...args: unknown[]): T;
+interface Constructor {
+  new (...args: any[]): any;
 }
 
 export default function Trace({ logger = console }: { logger?: Logger }) {
-  return <T>(classConstructor: Constructor<T>) => {
+  return <C extends Constructor>(classConstructor: C) => {
     const methodNames = Object.getOwnPropertyNames(classConstructor.prototype);
 
     for (const methodName of methodNames) {

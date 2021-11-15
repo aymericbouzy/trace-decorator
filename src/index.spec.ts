@@ -28,6 +28,19 @@ it('calls logger with input and output', () => {
   });
 });
 
+it('keeps "this" untouched', () => {
+  @Trace({ logger })
+  class UserRepository {
+    constructor(private idGenerator = 0) {}
+
+    create(name: string) {
+      return { id: this.idGenerator++, name };
+    }
+  }
+
+  new UserRepository().create('Aymeric');
+});
+
 it('logs when method throws', () => {
   @Trace({ logger })
   class UserRepository {
