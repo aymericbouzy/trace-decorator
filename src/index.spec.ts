@@ -27,3 +27,23 @@ it('calls logger with input and output', async () => {
     output: { id: 1, name: 'Aymeric' },
   });
 });
+
+it('logs when method throws', async () => {
+  @Trace({ logger })
+  class UserRepository {
+    create(name: string) {
+      throw new Error('Not implemented');
+    }
+  }
+
+  expect(() => new UserRepository().create('Aymeric')).toThrow(
+    new Error('Not implemented'),
+  );
+
+  expect(logger.info).toHaveBeenNthCalledWith(1, '› UserRepository.create', {
+    input: ['Aymeric'],
+  });
+  expect(logger.error).toHaveBeenNthCalledWith(1, '‹ UserRepository.create', {
+    error: new Error('Not implemented'),
+  });
+});

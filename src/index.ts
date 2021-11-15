@@ -14,12 +14,20 @@ export default function Trace({ logger = console }: { logger?: Logger }) {
         logger.info(`› ${classConstructor.name}.${methodName}`, {
           input: [...arguments],
         });
-        const result = method.call(this, ...arguments);
-        logger.info(`‹ ${classConstructor.name}.${methodName}`, {
-          output: result,
-        });
+        try {
+          const result = method.call(this, ...arguments);
+          logger.info(`‹ ${classConstructor.name}.${methodName}`, {
+            output: result,
+          });
 
-        return result;
+          return result;
+        } catch (error) {
+          logger.error(`‹ ${classConstructor.name}.${methodName}`, {
+            error,
+          });
+
+          throw error;
+        }
       };
     }
 
