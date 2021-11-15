@@ -25,13 +25,14 @@ it('calls logger with input and output', () => {
   });
   expect(logger.info).toHaveBeenNthCalledWith(2, '‹ UserRepository.create', {
     output: { id: 1, name: 'Aymeric' },
+    executionMs: expect.any(Number),
   });
 });
 
 it('keeps "this" untouched', () => {
   @Trace({ logger })
   class UserRepository {
-    constructor(private idGenerator = 0) {}
+    constructor(private idGenerator = 1) {}
 
     create(name: string) {
       return { id: this.idGenerator++, name };
@@ -39,6 +40,11 @@ it('keeps "this" untouched', () => {
   }
 
   new UserRepository().create('Aymeric');
+
+  expect(logger.info).toHaveBeenNthCalledWith(2, '‹ UserRepository.create', {
+    output: { id: 1, name: 'Aymeric' },
+    executionMs: expect.any(Number),
+  });
 });
 
 it('logs when method throws', () => {
@@ -58,6 +64,7 @@ it('logs when method throws', () => {
   });
   expect(logger.error).toHaveBeenNthCalledWith(1, '‹ UserRepository.create', {
     error: new Error('Not implemented'),
+    executionMs: expect.any(Number),
   });
 });
 
@@ -76,6 +83,7 @@ it('logs when method returns a promise', async () => {
     '‹ await UserRepository.create',
     {
       output: { id: 1, name: 'Aymeric' },
+      executionMs: expect.any(Number),
     },
   );
 });
@@ -97,6 +105,7 @@ it('logs when method rejects', async () => {
     '‹ await UserRepository.create',
     {
       error: new Error('Not implemented'),
+      executionMs: expect.any(Number),
     },
   );
 });

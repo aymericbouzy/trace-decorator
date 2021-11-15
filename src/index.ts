@@ -14,6 +14,9 @@ export default function Trace({ logger = console }: { logger?: Logger }) {
         logger.info(`› ${classConstructor.name}.${methodName}`, {
           input: [...arguments],
         });
+
+        const start = new Date();
+
         try {
           const result = method.call(this, ...arguments);
 
@@ -22,6 +25,7 @@ export default function Trace({ logger = console }: { logger?: Logger }) {
               (awaitedResult) => {
                 logger.info(`‹ await ${classConstructor.name}.${methodName}`, {
                   output: awaitedResult,
+                  executionMs: new Date().valueOf() - start.valueOf(),
                 });
 
                 return awaitedResult;
@@ -29,6 +33,7 @@ export default function Trace({ logger = console }: { logger?: Logger }) {
               (error) => {
                 logger.error(`‹ await ${classConstructor.name}.${methodName}`, {
                   error,
+                  executionMs: new Date().valueOf() - start.valueOf(),
                 });
 
                 throw error;
@@ -38,12 +43,14 @@ export default function Trace({ logger = console }: { logger?: Logger }) {
 
           logger.info(`‹ ${classConstructor.name}.${methodName}`, {
             output: result,
+            executionMs: new Date().valueOf() - start.valueOf(),
           });
 
           return result;
         } catch (error) {
           logger.error(`‹ ${classConstructor.name}.${methodName}`, {
             error,
+            executionMs: new Date().valueOf() - start.valueOf(),
           });
 
           throw error;
