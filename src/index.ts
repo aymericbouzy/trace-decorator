@@ -10,12 +10,13 @@ export default function Trace({ logger = console }: { logger?: Logger }) {
 
     for (const methodName of methodNames) {
       const method: Function = classConstructor.prototype[methodName];
-      classConstructor.prototype[methodName] = function () {
-        logger.info(`› ${classConstructor.name}.${methodName}`, {
-          input: [...arguments],
-        });
 
-        const start = new Date();
+      classConstructor.prototype[methodName] = function () {
+        const execution = new Execution(
+          `${classConstructor.name}.${methodName}`,
+          logger,
+        );
+        execution.input([...arguments]);
 
         try {
           const result = method.call(this, ...arguments);
@@ -23,35 +24,31 @@ export default function Trace({ logger = console }: { logger?: Logger }) {
           if (isThenable(result)) {
             return result.then(
               (awaitedResult) => {
-                logger.info(`‹ await ${classConstructor.name}.${methodName}`, {
-                  output: awaitedResult,
-                  executionMs: new Date().valueOf() - start.valueOf(),
-                });
+                execution.output(
+                  'info',
+                  awaitedResult,
+                  (methodName) => `await ${methodName}`,
+                );
 
                 return awaitedResult;
               },
               (error) => {
-                logger.error(`‹ await ${classConstructor.name}.${methodName}`, {
+                execution.output(
+                  'error',
                   error,
-                  executionMs: new Date().valueOf() - start.valueOf(),
-                });
+                  (methodName) => `await ${methodName}`,
+                );
 
                 throw error;
               },
             );
           }
 
-          logger.info(`‹ ${classConstructor.name}.${methodName}`, {
-            output: result,
-            executionMs: new Date().valueOf() - start.valueOf(),
-          });
+          execution.output('info', result);
 
           return result;
         } catch (error) {
-          logger.error(`‹ ${classConstructor.name}.${methodName}`, {
-            error,
-            executionMs: new Date().valueOf() - start.valueOf(),
-          });
+          execution.output('error', error);
 
           throw error;
         }
@@ -68,4 +65,25 @@ function isThenable(variable: unknown): variable is PromiseLike<unknown> {
     // @ts-expect-error
     typeof variable.then === 'function'
   );
+}
+
+class Execution {
+  start = new Date();
+
+  constructor(private methodName: string, private logger: Logger) {}
+
+  input(input: unknown) {
+    this.logger.info(`› ${this.methodName}`, { input });
+  }
+
+  output(
+    type: 'error' | 'info',
+    output: unknown,
+    decorate = (methodName: string) => methodName,
+  ) {
+    this.logger[type](`‹ ${decorate(this.methodName)}`, {
+      [type === 'error' ? 'error' : 'output']: output,
+      executionMs: new Date().valueOf() - this.start.valueOf(),
+    });
+  }
 }
